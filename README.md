@@ -22,7 +22,7 @@ Now if you visit [http://localhost:8888/notebooks/trump-tweets.ipynb](http://loc
 
 I am not in love with the composition of this Dockerfile for a couple reasons:
 - Installing R packages from the command line is weird and needs a third-party library (littler).
-- I don't love the fact I had to us `chown` to set the right user permissions. Even when I had the `USER jovyan` command before the `COPY` the Notebo0k and Data files were copied with root permissions. I'm not sure why.
+- I don't love the fact I had to use `chown` to set the right user permissions. Even when I had the `USER jovyan` command before the `COPY` the Notebook and Data files were copied with root permissions. I'm not sure why. bug?
 - I feel like I could do a better job preparing the image so that it doesn't have as many layers.
 
 I am purposefully putting content files (`trump-tweets.ipynb`, trump_tweets_df.rda) *into* the image to make it easy to just pull the image down from Dockerhub, but I am not sure how people will feel about this decision. I think my uneasiness speaks to the gaps in how to manage data in Docker containers. That said, this decision is part of some experiments in thinking about Docker containers as *media*.
