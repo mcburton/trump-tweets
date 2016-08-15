@@ -1,23 +1,22 @@
 
 # A container for the Trump Tweets blog posted
 
-# https://github.com/rocker-org/hadleyverse/blob/master/Dockerfile
-FROM rocker/hadleyverse
+# https://github.com/rocker-org/rocker/blob/master/r-base/Dockerfile
+FROM r-base:latest
 
 MAINTAINER mcburton <matt@mcburton.net>
 
 
 USER root
 
-# References:
-# https://irkernel.github.io/installation/
-# https://github.com/rocker-org/hadleyverse/blob/master/Dockerfile
-# https://github.com/rocker-org/rocker/blob/master/rstudio/Dockerfile
-# Installing litter to get the Rscript command
+# installing the jupyter notebook from pip
+# because I prefer pip to conda
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         apt-utils \
         build-essential \
+        libcurl4-openssl-dev \
+        libssl-dev \
         python3 \
         python3-dev \
         python3-pip \
@@ -27,9 +26,22 @@ RUN apt-get update \
     && rm -rf /tmp/downloaded_packages/ /tmp/*.rds \
     && rm -rf /var/lib/apt/lists/*
 
-#COPY ./packages.R /tmp/packages.R
-#RUN  Rscript /tmp/packages.R
+
+# install the R packages for running the notebook
+# and for installing the R jupyter kernel
+# https://irkernel.github.io/installation/
 RUN install2.r --error \
+    ggplot2 \
+    dplyr \
+    purrr \
+    tidyr \
+    lubridate \
+    stringr \
+    scales \
+    tidytext \
+    broom \
+    httr \
+    git2r \
     repr \
     IRdisplay \
     evaluate \
@@ -37,14 +49,20 @@ RUN install2.r --error \
     pbdZMQ \
     devtools \
     uuid \
-    digest
+    digest \
+    && r -e "devtools::install_github('IRkernel/IRkernel')" \
+    && r -e "IRkernel::installspec(user = FALSE)"  # to register the kernel in the current R installation
 
-# COPY isn't copying w/ correct permissions
-# even when I put USER jovyan before the COPY
-COPY ./trump-tweets.ipynb /home/rstudio/trump-tweets.ipynb
-COPY ./trump_tweets_df.rda /home/rstudio/trump_tweets_df.rda
-RUN chown rstudio:rstudio /home/rstudio/trump-tweets.ipynb /home/rstudio/trump_tweets_df.rda
 
-WORKDIR ['/home/rstudio']
-# I had this before the COPY but it wasn't working. Bug?
-USER rstudio
+# copy data files into home directory
+# I know we are the docker user by looking at r-base
+WORKDIR /home/docker
+
+COPY ./trump-tweets.ipynb trump-tweets.ipynb
+COPY ./trump_tweets_df.rda trump_tweets_df.rda
+RUN chown -Rh docker:docker trump-tweets.ipynb trump_tweets_df.rda
+
+USER docker
+
+# I should probably use tini or something so stopping the container is more elegant
+CMD jupyter notebook --ip=0.0.0.0
